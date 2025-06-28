@@ -1,0 +1,12 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node.js / Angular
+node_modules/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
