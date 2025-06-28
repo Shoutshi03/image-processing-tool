@@ -1,12 +1,37 @@
-# Python
-venv/
-__pycache__/
-*.pyc
+# ========== BACKEND (Python / FastAPI) ==========
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+*.py[cod]
+*.so
+.Python
 
-# Node.js / Angular
-node_modules/
-dist/
+# ========== FRONTEND (Angular / Node.js) ==========
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.output/
+frontend/.cache/
+frontend/package-lock.json
+frontend/yarn.lock
 
-# OS files
+# ========== GLOBAL SYSTEM FILES ==========
+*.log
 .DS_Store
 Thumbs.db
+
+# ========== ENV & CONFIG ==========
+.env
+*.env
+*.local
+
+# ========== IDE / EDITOR ========== 
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ========== Git ========== 
+.gitignore
