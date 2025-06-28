@@ -1,0 +1,336 @@
+<mat-toolbar color="primary" class="app-toolbar">
+  <mat-icon>image</mat-icon>
+  <span class="toolbar-title">{{ title }}</span>
+  <span class="spacer"></span>
+  <mat-icon>photo_camera</mat-icon>
+</mat-toolbar>
+
+<div class="app-container">
+  <!-- Section de téléchargement -->
+  <mat-card class="upload-card" *ngIf="!originalImage">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>cloud_upload</mat-icon>
+        Télécharger une image
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="upload-area">
+        <input type="file" 
+               #fileInput 
+               (change)="onFileSelected($event)" 
+               accept="image/*" 
+               style="display: none;">
+        <button mat-raised-button 
+                color="primary" 
+                (click)="fileInput.click()"
+                [disabled]="isLoading">
+          <mat-icon>add_photo_alternate</mat-icon>
+          Choisir une image
+        </button>
+        <p class="upload-hint">Formats supportés: JPG, PNG, GIF, BMP</p>
+        <mat-spinner *ngIf="isLoading" diameter="40"></mat-spinner>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Interface principale -->
+  <div class="main-interface" *ngIf="originalImage">
+    <!-- Images -->
+    <div class="images-section">
+      <mat-card class="image-card">
+        <mat-card-header>
+          <mat-card-title>Image originale</mat-card-title>
+          <div class="spacer"></div>
+          <button mat-icon-button (click)="originalImage = null; resetImage()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-card-header>
+        <mat-card-content>
+          <img [src]="originalImage" alt="Image originale" class="display-image">
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="image-card" *ngIf="processedImage">
+        <mat-card-header>
+          <mat-card-title>Image traitée</mat-card-title>
+          <div class="spacer"></div>
+          <button mat-icon-button color="primary" (click)="downloadImage()">
+            <mat-icon>download</mat-icon>
+          </button>
+        </mat-card-header>
+        <mat-card-content>
+          <img [src]="processedImage" alt="Image traitée" class="display-image">
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="image-card" *ngIf="histogramImage">
+        <mat-card-header>
+          <mat-card-title>Histogramme</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <img [src]="histogramImage" alt="Histogramme" class="display-image">
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Contrôles -->
+    <mat-card class="controls-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>tune</mat-icon>
+          Opérations de traitement
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-tab-group>
+          <!-- Opérations de base -->
+          <mat-tab label="Base">
+            <div class="tab-content">
+              <div class="operation-group">
+                <h3>Conversions</h3>
+                <button mat-raised-button 
+                        (click)="convertToGrayscale()" 
+                        [disabled]="isProcessing">
+                  <mat-icon>filter_b_and_w</mat-icon>
+                  Niveaux de gris
+                </button>
+                <button mat-raised-button 
+                        (click)="generateHistogram()" 
+                        [disabled]="isProcessing">
+                  <mat-icon>bar_chart</mat-icon>
+                  Histogramme
+                </button>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="operation-group">
+                <h3>Transformations géométriques</h3>
+                <div class="form-row">
+                  <mat-form-field>
+                    <mat-label>Direction</mat-label>
+                    <mat-select [(value)]="flipDirection">
+                      <mat-option value="horizontal">Horizontal</mat-option>
+                      <mat-option value="vertical">Vertical</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          (click)="flipImage()" 
+                          [disabled]="isProcessing">
+                    <mat-icon>flip</mat-icon>
+                    Retourner
+                  </button>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field>
+                    <mat-label>Angle (degrés)</mat-label>
+                    <input matInput type="number" [(ngModel)]="rotationAngle" min="-360" max="360">
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          (click)="rotateImage()" 
+                          [disabled]="isProcessing">
+                    <mat-icon>rotate_right</mat-icon>
+                    Rotation
+                  </button>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field>
+                    <mat-label>Largeur</mat-label>
+                    <input matInput type="number" [(ngModel)]="resizeWidth" min="1">
+                  </mat-form-field>
+                  <mat-form-field>
+                    <mat-label>Hauteur</mat-label>
+                    <input matInput type="number" [(ngModel)]="resizeHeight" min="1">
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          (click)="resizeImage()" 
+                          [disabled]="isProcessing">
+                    <mat-icon>photo_size_select_large</mat-icon>
+                    Redimensionner
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Seuillage -->
+          <mat-tab label="Seuillage">
+            <div class="tab-content">
+              <div class="operation-group">
+                <h3>Seuillage</h3>
+                <div class="form-row">
+                  <mat-form-field>
+                    <mat-label>Méthode</mat-label>
+                    <mat-select [(value)]="thresholdMethod">
+                      <mat-option value="global">Global</mat-option>
+                      <mat-option value="adaptive">Adaptatif</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field *ngIf="thresholdMethod === 'global'">
+                    <mat-label>Valeur seuil</mat-label>
+                    <input matInput type="number" [(ngModel)]="thresholdValue" min="0" max="255">
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          (click)="thresholdImage()" 
+                          [disabled]="isProcessing">
+                    <mat-icon>contrast</mat-icon>
+                    Appliquer seuillage
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Filtrage -->
+          <mat-tab label="Filtrage">
+            <div class="tab-content">
+              <div class="operation-group">
+                <h3>Réduction du bruit</h3>
+                <div class="form-row">
+                  <mat-form-field>
+                    <mat-label>Méthode</mat-label>
+                    <mat-select [(value)]="denoiseMethod">
+                      <mat-option value="gaussian">Flou gaussien</mat-option>
+                      <mat-option value="median">Filtre médian</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field>
+                    <mat-label>Taille du noyau</mat-label>
+                    <input matInput type="number" [(ngModel)]="kernelSize" min="3" max="15" step="2">
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          (click)="denoiseImage()" 
+                          [disabled]="isProcessing">
+                    <mat-icon>blur_on</mat-icon>
+                    Réduire le bruit
+                  </button>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="operation-group">
+                <h3>Opérations morphologiques</h3>
+                <div class="form-row">
+                  <mat-form-field>
+                    <mat-label>Opération</mat-label>
+                    <mat-select [(value)]="morphologyOp">
+                      <mat-option value="erosion">Érosion</mat-option>
+                      <mat-option value="dilation">Dilatation</mat-option>
+                      <mat-option value="opening">Ouverture</mat-option>
+                      <mat-option value="closing">Fermeture</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          (click)="morphologyOperation()" 
+                          [disabled]="isProcessing">
+                    <mat-icon>grain</mat-icon>
+                    Appliquer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Détection -->
+          <mat-tab label="Détection">
+            <div class="tab-content">
+              <div class="operation-group">
+                <h3>Détection de contours</h3>
+                <div class="form-row">
+                  <mat-form-field>
+                    <mat-label>Méthode</mat-label>
+                    <mat-select [(value)]="edgeMethod">
+                      <mat-option value="canny">Canny</mat-option>
+                      <mat-option value="sobel">Sobel</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          (click)="edgeDetection()" 
+                          [disabled]="isProcessing">
+                    <mat-icon>border_outer</mat-icon>
+                    Détecter contours
+                  </button>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="operation-group">
+                <h3>Segmentation</h3>
+                <div class="form-row">
+                  <mat-form-field>
+                    <mat-label>Nombre de segments</mat-label>
+                    <input matInput type="number" [(ngModel)]="nSegments" min="10" max="1000">
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          (click)="superpixelSegmentation()" 
+                          [disabled]="isProcessing">
+                    <mat-icon>grid_on</mat-icon>
+                    Superpixels
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Visages -->
+          <mat-tab label="Visages">
+            <div class="tab-content">
+              <div class="operation-group">
+                <h3>Détection de visages</h3>
+                <button mat-raised-button 
+                        (click)="faceDetection()" 
+                        [disabled]="isProcessing">
+                  <mat-icon>face</mat-icon>
+                  Détecter visages
+                </button>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="operation-group">
+                <h3>Anonymisation</h3>
+                <div class="form-row">
+                  <mat-form-field>
+                    <mat-label>Méthode</mat-label>
+                    <mat-select [(value)]="anonymizationMethod">
+                      <mat-option value="blur">Flou</mat-option>
+                      <mat-option value="pixelate">Pixelisation</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-raised-button 
+                          (click)="faceAnonymization()" 
+                          [disabled]="isProcessing">
+                    <mat-icon>visibility_off</mat-icon>
+                    Anonymiser
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+
+        <div class="processing-indicator" *ngIf="isProcessing">
+          <mat-spinner diameter="30"></mat-spinner>
+          <span>Traitement en cours...</span>
+        </div>
+
+        <div class="action-buttons" *ngIf="processedImage">
+          <button mat-raised-button color="primary" (click)="downloadImage()">
+            <mat-icon>download</mat-icon>
+            Télécharger le résultat
+          </button>
+          <button mat-raised-button (click)="resetImage()">
+            <mat-icon>refresh</mat-icon>
+            Réinitialiser
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+
