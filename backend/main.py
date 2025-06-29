@@ -429,7 +429,16 @@ async def face_anonymization(image_data: str = Form(...), method: str = Form(...
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de l'anonymisation: {str(e)}")
 
+
+import os
+port = int(os.getenv("PORT", 8000))  # Utilise 8000 comme fallback si non défini
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
+
+
+#if __name__ == "__main__":
+    #import uvicorn
+    #uvicorn.run(app, host="0.0.0.0", port=8000)
 
