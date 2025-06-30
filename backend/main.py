@@ -348,6 +348,8 @@ async def superpixel_segmentation(image_data: str = Form(...), n_segments: Optio
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la segmentation: {str(e)}")
 
+
+
 @app.post("/face-detection")
 async def face_detection(image_data: str = Form(...)):
     """Détection de visages"""
